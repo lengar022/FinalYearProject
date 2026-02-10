@@ -20,7 +20,6 @@ def read_raw_data():
     f = open(device_file, 'r')
     lines = f.readlines()
     f.close()
-    print(lines)
     return lines
 
 # Parse the data
