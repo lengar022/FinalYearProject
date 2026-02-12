@@ -1,0 +1,6 @@
+paho-mqtt
+pynmea2
+bleak
+pygame
+pyserial
+smbus2
