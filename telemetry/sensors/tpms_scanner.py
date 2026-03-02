@@ -11,27 +11,6 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 from typing import Dict
 
-# Mapping
-sensors = {
-    "12:30:af:00:00:83": "RR",  # Rear Right
-    "12:30:af:00:01:3b": "RL",  # Rear Left
-    "12:30:af:00:04:80": "FR",  # Front Right
-    "12:30:af:00:03:7e": "FL",  # Front Left
-}
-
-sensorName = "AI-8000"
-
-# store last seen pressure frame per sensor so we only print when it changes
-last_pressure_hex: Dict[str, str] = {}
-
-# TPMS Class
-@dataclass
-class TpmsReading:
-    ts: float
-    pos: str
-    psi: float
-    temp: int
-    
 # Converts kPa to PSI
 def kpa_to_psi(kpa: float):
     return kpa * 0.1450377377
@@ -57,60 +36,78 @@ def decode_tpms(payload: bytes):
     psi = kpa_to_psi(float(byte2))
     return temp, psi
 
-# Format reading
-def format_reading(reading: TpmsReading):
-    ts_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(reading.ts))
-    return f"{ts_str} | {reading.pos:2s} | {reading.psi:5.1f} PSI | {reading.temp:2d}°C"
+# TPMS Class
+@dataclass
+class LatestReading:
+    ts: float
+    psi: float
+    temp: int
 
+class TPMSMonitor:
+    def __init__(self, sensors, sensorName = "AI-8000"):
+        self.sensors = {m.lower(): pos for m, pos in sensors.items()}
+        self.sensorName = sensorName
+        self._last_pressure_hex: Dict[str, str] = {}
+        self.latest_by_pos: Dict[str, LatestReading] = {pos: LatestReading(None, None, 0.0) for pos in self.sensors.values()}
 
-def callback(device: BLEDevice, adv: AdvertisementData):
-    macAddress = (device.address or "").lower()
-    if macAddress not in sensors:
-        return
+    def callback(self, device: BLEDevice, adv: AdvertisementData):
+        macAddress = (device.address or "").lower()
+        if macAddress not in self.sensors:
+            return
 
-    name = (device.name or adv.local_name or "")
-    if sensorName not in name:
-        return
+        name = (device.name or adv.local_name or "")
+        if self.sensorName not in name:
+            return
 
-    if not adv.manufacturer_data:
-        return
+        if not adv.manufacturer_data:
+            return
 
-    for payload in adv.manufacturer_data.items():
-        decodedPayload = decode_tpms(payload)
-        if decodedPayload is None:
-            continue
+        for payload in adv.manufacturer_data.items():
+            decodedPayload = decode_tpms(payload)
+            if decodedPayload is None:
+                continue
 
-        temp, psi = decodedPayload
-        
-        raw_hex = payload.hex()
+            temp, psi = decodedPayload
+            
+            raw_hex = payload.hex()
 
-        # Only print when the pressure frame payload changes
-        if last_pressure_hex.get(macAddress) == raw_hex:
+            # Only update when the pressure frame payload changes
+            if self.last_pressure_hex.get(macAddress) == raw_hex:
+                return
+            
+            self.last_pressure_hex[macAddress] = raw_hex
+
+            pos = self.sensors[macAddress]
+            self.latest_by_pos[pos] = LatestReading(psi=psi, temp=temp, ts=time.time())
             return
         
-        last_pressure_hex[macAddress] = raw_hex
-
-        reading = TpmsReading(
-            ts=time.time(),
-            pos=sensors[macAddress],
-            psi=psi,
-            temp=temp
-        )
-        print(format_reading(reading))
-        return
-    
-async def main():
-    scanner = BleakScanner(callback)
-    print("TPMS monitor running (Ctrl+C to stop).")
-    print("Timestamp | pos | PSI | temp |")
-
-    while True:
+    async def run_forever(self):
+        scanner = BleakScanner(self.callback)
         await scanner.start()
-        await asyncio.sleep(5)
-        await scanner.stop()
+        try: 
+            while True:
+                await asyncio.sleep(1.0)
+        finally:
+            await scanner.stop()
 
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\nStopped.")
+    def snapshot(self):
+            pos_to_wheel = {"FL": "front_left", "FR": "front_right", "RL": "rear_left", "RR": "rear_right"}
+
+            out = {
+                "front_left": {"psi": None, "temp": None, "age": None},
+                "front_right": {"psi": None, "temp": None, "age": None},
+                "rear_left": {"psi": None, "temp": None, "age": None},
+                "rear_right": {"psi": None, "temp": None, "age": None},
+            }
+
+            now = time.time()
+            for pos, latestReading in self.latest_by_pos.items():
+                wheel = pos_to_wheel.get(pos)
+                if not wheel:
+                    continue
+                out[wheel] = {
+                    "psi": round(latestReading.psi, 1) if latestReading.psi is not None else None,
+                    "temp": float(latestReading.temp) if latestReading.temp is not None else None,
+                    "age": round(now - latestReading.ts, 1) if latestReading.ts else None,
+                }
+            return out
