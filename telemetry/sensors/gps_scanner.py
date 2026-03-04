@@ -1,20 +1,45 @@
 import serial
 import pynmea2
-from datetime import datetime
+import time
 
-ser = serial.Serial("/dev/serial0", baudrate=9600, timeout=1)
+class GPSMonitor:
+    def __init__(self, port: str,  baud: int):
+        self.ser = serial.Serial(port, baudrate=baud, timeout=0.1)
 
-while True:
-    line = ser.readline().decode(errors="ignore").strip()
-    if line.startswith("$GPRMC"):
-        try:
-            msg = pynmea2.parse(line)
-            if msg.status == "A": 
-                speed_kmh = msg.spd_over_grnd * 1.852
-                print(
-                    f"{datetime.now().isoformat(timespec='seconds')} "
-                    f"lat={msg.latitude:.6f} lon={msg.longitude:.6f} "
-                    f"speed={speed_kmh}"
-                )
-        except pynmea2.ParseError:
-            pass
+        self.last = {
+            "fix": False,
+            "lat": None,
+            "lon": None,
+            "speed_kph": None,
+        }
+    
+    def poll(self, max_lines: int = 8, max_time: float = 0.2):
+        t0 = time.time()
+        
+        for _ in range(max_lines):
+            if time.time() - t0 > max_time:
+                break
+
+            line = self.ser.readline().decode(errors="ignore").strip()
+            
+            if not line.startswith("$GPRMC"):
+                continue
+
+            try:
+                msg = pynmea2.parse(line)
+            except pynmea2.ParseError:
+                continue
+            
+            if getattr(msg, "status", "") != "A":
+                self.last["fix"] = False
+                continue
+            
+            self.last["fix"] = True
+
+            if msg.latitude:
+                self.last["lat"] = float(f"{msg.latitude:.6f}")
+            if msg.longitude:
+                self.last["lon"] = float(f"{msg.longitude:.6f}")
+                
+            break
+        return dict(self.last)
