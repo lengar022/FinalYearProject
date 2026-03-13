@@ -2,20 +2,9 @@ import time
 from smbus2 import SMBus
 
 class FuelMonitor:
-    #i2c_address = 0x48
     conversion_address = 0x00
     config_address  = 0x01
-    #voltage_range = 4.096
 
-    # Fuel Sender parameters
-    #resistor = 220.0
-    #voltage_supply = 3.3
-
-    #resistance_empty = 242.8
-    #resistance_full  = 33.2
-    #resistance_span  = resistance_empty - resistance_full
-
-    # ADS1115 Configuration
     def __init__(self, 
                  i2c_address, 
                  voltage_range, 
