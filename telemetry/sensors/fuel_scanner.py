@@ -60,7 +60,7 @@ class FuelMonitor:
         pct = ((self.resistance_empty - r) / self.resistance_span) * 100.0
         return max(0.0, min(100.0, pct))
 
-    def read(self):
+    def read_fuel(self):
         raw = self.read_adc_raw()
         volts = self.raw_to_volts(raw)
         r_sender = self.volts_to_ohms(volts)

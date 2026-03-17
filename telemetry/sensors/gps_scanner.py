@@ -13,7 +13,7 @@ class GPSMonitor:
             "speed_kph": None,
         }
     
-    def poll(self, max_lines: int = 8, max_time: float = 0.2):
+    def read_gps(self, max_lines: int = 8, max_time: float = 0.2):
         t0 = time.time()
         
         for _ in range(max_lines):
