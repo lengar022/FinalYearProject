@@ -1,0 +1,12 @@
+[Unit]
+Description=Car Telemetry Publisher
+After=network.target mosquitto.service
+
+[Service]
+WorkingDirectory=/home/lengar022/Documents/FinalYearProject
+ExecStart=/home/lengar022/Documents/FinalYearProject/fyp_env/bin/python -m telemetry.publisher
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
