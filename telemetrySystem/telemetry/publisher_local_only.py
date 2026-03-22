@@ -1,13 +1,10 @@
 import asyncio
-import time
 from datetime import datetime, timezone
 
 from config import (
     DEVICE,
     LOCAL_MQTT,
-    CLOUD_MQTT,
     DASHBOARD_PUBLISH_INTERVAL,
-    BROKER_PUBLISH_INTERVAL,
     TPMS_SENSORS,
     I2C_ADDRESS,
     VOLTAGE_RANGE,
@@ -20,7 +17,6 @@ from config import (
 )
 
 from telemetry.mqtt_local import LocalMQTTPublisher
-from telemetry.mqtt_cloud import CloudMQTTPublisher
 from telemetry.sensors.tpms_scanner import TPMSMonitor
 from telemetry.sensors.gps_scanner import GPSMonitor
 from telemetry.sensors.temp_scanner import TempMonitor
@@ -37,26 +33,6 @@ async def main():
         LOCAL_MQTT.host,
         LOCAL_MQTT.port,
     )
-
-    cloud_mqtt = None
-    if CLOUD_MQTT.enabled:
-        try:
-            cloud_mqtt = CloudMQTTPublisher(
-                host=CLOUD_MQTT.host,
-                port=CLOUD_MQTT.port,
-                username=CLOUD_MQTT.username,
-                password=CLOUD_MQTT.password,
-                client_id=DEVICE.device_id,
-            )
-            print(
-                "CLOUD MQTT CONNECTED | host =",
-                CLOUD_MQTT.host,
-                "| topic =",
-                CLOUD_MQTT.topic,
-            )
-        except Exception as e:
-            print(f"CLOUD MQTT CONNECT FAILED: {e}")
-            cloud_mqtt = None
 
     tpms = TPMSMonitor(TPMS_SENSORS)
     gps = GPSMonitor(GPS_PORT, GPS_BAUD)
@@ -140,7 +116,6 @@ async def main():
     asyncio.create_task(gps_worker())
     asyncio.create_task(fuel_worker())
 
-    last_broker_publish = 0.0
 
     while True:
         try:
@@ -180,14 +155,6 @@ async def main():
             local_mqtt.publish_json(LOCAL_MQTT.topic, payload, qos=0, retain=False)
         except Exception as e:
             print(f"LOCAL_MQTT_PUBLISH_FAILED: {e}")
-
-        now = time.time()
-        if cloud_mqtt and (now - last_broker_publish >= BROKER_PUBLISH_INTERVAL):
-            last_broker_publish = now
-            try:
-                cloud_mqtt.publish_json(CLOUD_MQTT.topic, payload, qos=0, retain=False)
-            except Exception as e:
-                print(f"CLOUD_MQTT_PUBLISH_FAILED: {e}")
 
         await asyncio.sleep(DASHBOARD_PUBLISH_INTERVAL)
 

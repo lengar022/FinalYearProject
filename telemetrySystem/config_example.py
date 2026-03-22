@@ -15,6 +15,7 @@ class LocalMQTT:
 LOCAL_MQTT = LocalMQTT()
 
 DASHBOARD_PUBLISH_INTERVAL = 0.2
+BROKER_PUBLISH_INTERVAL = 5.0
 
 TPMS_SENSORS = {
     "12:30:af:00:00:83": "RR",
@@ -32,3 +33,21 @@ RESISTANCE_FULL  = 33.2
 
 GPS_PORT = "/dev/serial0"
 GPS_BAUD = 9600
+
+@dataclass
+class MQTTBrokerConfig:
+    host: str
+    port: int
+    topic: str
+    username: str
+    password: str
+    enabled: bool = True
+    
+CLOUD_MQTT = MQTTBrokerConfig(
+    host="<url>",
+    port=9999,
+    topic="<topic>",
+    username="<username>",
+    password="<password>",
+    enabled=True,
+)
