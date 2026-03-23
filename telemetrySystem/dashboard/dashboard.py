@@ -79,9 +79,14 @@ def main():
             psi_txt = "--.- psi" if psi is None else f"{psi:.1f} psi"
             temp_txt  = "--.- °C"  if temp is None else f"{temp:.1f} °C"
 
+            if psi is not None and psi < 20:
+                psi_color = (255, 0, 0) 
+            else:
+                psi_color = (255, 255, 255)
+                
             pygame.draw.rect(screen, (60, 60, 60), (x, y, int(w*0.4), int(h*0.17)), 2)
             screen.blit(font_small.render(title, True, (200, 200, 200)), (x+15, y+10))
-            screen.blit(font_med.render(psi_txt, True, (255, 255, 255)), (x+15, y+55))
+            screen.blit(font_med.render(psi_txt, True, psi_color), (x+15, y+55))
             screen.blit(font_small.render(temp_txt, True, (200, 200, 200)), (x+15, y+120))
 
         fix = get(data, "gps", "fix", default=False)
