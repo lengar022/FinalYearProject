@@ -26,5 +26,6 @@ class TempMonitor:
         
         temp_string = lines[1][idx+2:]
         temp_c = float(temp_string) / 1000.0
-        return temp_c
+        temp_c_adjustment = temp_c + 70
+        return temp_c_adjustment
     

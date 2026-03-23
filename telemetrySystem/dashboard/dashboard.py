@@ -63,7 +63,13 @@ def main():
         fuel_txt = "Fuel: --%" if fuel_pct is None else f"Fuel: {fuel_pct:.0f}%"
         temp_txt = "Water: --°C" if water_c is None else f"Water: {water_c:.1f}°C"
         screen.blit(font_med.render(fuel_txt, True, (255, 255, 255)), (int(w*0.55), int(h*0.08)))
-        screen.blit(font_med.render(temp_txt, True, (255, 255, 255)), (int(w*0.55), int(h*0.18)))
+        
+        if water_c is not None and water_c > 90:
+            water_c_color = (255, 0, 0) 
+        else:
+            water_c_color = (255, 255, 255) 
+    
+        screen.blit(font_med.render(temp_txt, True, water_c_color), (int(w*0.55), int(h*0.18)))
 
         positions = [
             ("front_left",  int(w*0.05), int(h*0.55)),
