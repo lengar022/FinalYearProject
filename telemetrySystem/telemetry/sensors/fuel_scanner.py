@@ -65,5 +65,6 @@ class FuelMonitor:
         volts = self.raw_to_volts(raw)
         r_sender = self.volts_to_ohms(volts)
         fuel_pct = self.ohms_to_percent(r_sender)
+        fuel_pct_adjusted = max(0.0, fuel_pct-(20*((100-fuel_pct)/80)))
 
-        return {"percent": round(fuel_pct, 1)}
+        return {"percent": round(fuel_pct_adjusted, 1)}
