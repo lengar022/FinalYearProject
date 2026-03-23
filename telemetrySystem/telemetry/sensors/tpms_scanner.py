@@ -24,6 +24,8 @@ def decode_tpms(payload: bytes):
 
     Returns (temp, psi) if it's a pressure frame, else None.
     """
+    print("hello")
+    print(payload)
     if len(payload) != 3:
         return None
 
@@ -47,9 +49,9 @@ class TPMSMonitor:
     def __init__(self, sensors, sensorName = "AI-8000"):
         self.sensors = {m.lower(): pos for m, pos in sensors.items()}
         self.sensorName = sensorName
-        self._last_pressure_hex: Dict[str, str] = {}
+        self.last_pressure_hex: Dict[str, str] = {}
         self.latest_by_pos: Dict[str, LatestReading] = {pos: LatestReading(None, None, 0.0) for pos in self.sensors.values()}
-
+        
     def callback(self, device: BLEDevice, adv: AdvertisementData):
         macAddress = (device.address or "").lower()
         if macAddress not in self.sensors:
@@ -62,7 +64,7 @@ class TPMSMonitor:
         if not adv.manufacturer_data:
             return
 
-        for payload in adv.manufacturer_data.items():
+        for _, payload in adv.manufacturer_data.items():
             decodedPayload = decode_tpms(payload)
             if decodedPayload is None:
                 continue
@@ -71,7 +73,6 @@ class TPMSMonitor:
             
             raw_hex = payload.hex()
 
-            # Only update when the pressure frame payload changes
             if self.last_pressure_hex.get(macAddress) == raw_hex:
                 return
             

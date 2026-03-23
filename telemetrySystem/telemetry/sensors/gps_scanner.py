@@ -41,5 +41,14 @@ class GPSMonitor:
             if msg.longitude:
                 self.last["lon"] = float(f"{msg.longitude:.6f}")
                 
+            spd_knots = None
+            try:
+                spd_knots = float(msg.spd_over_grnd) if msg.spd_over_grnd else None
+            except Exception:
+                spd_knots = None
+
+            if spd_knots is not None:
+                self.last["speed_kph"] = spd_knots * 1.852
+                
             break
         return dict(self.last)
