@@ -1,4 +1,6 @@
 <script>
+	import LeafletMap from "$lib/ui/LeafletMap.svelte";
+		
 	let telemetry = {
 		engine: { water_temp: 88 },
 		fuel: { percent: 62 },
@@ -97,11 +99,15 @@
 					<header class="card-header">
 						<p class="card-header-title is-size-4">Live Location</p>
 					</header>
-
 					<div class="card-content">
-						<div class="box has-text-centered is-flex">
-							<p class="title is-5">Map to be done</p>
-						</div>
+						<LeafletMap
+							height="437px"
+							id="main-map"
+							latitude={telemetry.gps.lat}
+							longitude={telemetry.gps.lon}
+							zoom={13}
+							name="Rally Car"
+						/>
 					</div>
 				</div>
 			</div>
