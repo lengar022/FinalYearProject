@@ -43,7 +43,6 @@
 	});
 
 	$effect(() => {
-	    console.log('map props changed', latitude, longitude);
 		if (map && marker) {
             if (!isValid(latitude) || !isValid(longitude)) return;
 
