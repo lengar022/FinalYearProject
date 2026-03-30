@@ -43,6 +43,7 @@
 	});
 
 	$effect(() => {
+		console.log('effect running', { latitude, longitude, hasMap: !!map, hasMarker: !!marker });
 		if (map && marker) {
             if (!isValid(latitude) || !isValid(longitude)) return;
 
